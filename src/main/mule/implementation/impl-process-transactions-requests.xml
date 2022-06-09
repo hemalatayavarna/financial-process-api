@@ -1,0 +1,249 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<sub-flow name="impl-process-transactions-requests:get-transactions:subflow" doc:id="47fb10ce-6a73-4f56-a439-03b1eec9e8da" >
+		<logger level="INFO" doc:name="Log Start Transactions Requests" doc:id="c77b6803-13dc-41f0-bf68-c176f2cbfb5b" message="Log Start Transactions Requests"/>
+		<ee:transform doc:name="Set Variables: financialPath, sourceSystem, emsQueryParams, cedsQueryParams, mpQueryParams, page, limit" doc:id="cf351c68-b2b3-44fc-8c05-4e0f3e2e5073" >
+			<ee:message >
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="financialPath" ><![CDATA[%dw 2.0
+output application/java
+---
+Mule::p('system.api.transactions.path')]]></ee:set-variable>
+				<ee:set-variable variableName="sourceSystem" ><![CDATA[%dw 2.0
+output application/java
+---
+{	
+	"source-system" : attributes.queryParams.*"source-system"
+}]]></ee:set-variable>
+				<ee:set-variable variableName="emsQueryParams" ><![CDATA[  %dw 2.0
+output application/json skipNullOn="everywhere"
+var objectCodes = {(attributes.queryParams.*"object-code" map (value, index) -> {
+    "object-code": value
+})}
+var sysApiQueryParams = {
+	"reporting-unit": trim(attributes.queryParams."reporting-unit"),
+    "year": attributes.queryParams.year as Number default 0,
+    "page" : trim(attributes.queryParams.page) as Number default 1,
+	"limit": trim(attributes.queryParams.limit) as Number default 1,
+	"offset":(trim(attributes.queryParams.page)-1)*trim(attributes.queryParams.limit)
+}
+---
+objectCodes ++ sysApiQueryParams]]></ee:set-variable>
+				<ee:set-variable variableName="cedsQueryParams" ><![CDATA[  %dw 2.0
+output application/json skipNullOn="everywhere"
+var objectCodes = {(attributes.queryParams.*"object-code" map (value, index) -> {
+    "object-code": value
+})}
+var sysApiQueryParams = {
+    "reporting-unit": trim(attributes.queryParams."reporting-unit"),
+    "year": trim(attributes.queryParams.year) as Number default 0,
+    "page" : trim(attributes.queryParams.page) as Number default 1,
+	"limit": trim(attributes.queryParams.limit) as Number default 1,
+	"offset":(trim(attributes.queryParams.page) - 1)*trim(attributes.queryParams.limit)
+}
+---
+objectCodes ++ sysApiQueryParams]]></ee:set-variable>
+				<ee:set-variable variableName="mpQueryParams" ><![CDATA[  %dw 2.0
+output application/json skipNullOn="everywhere"
+var objectCodes = {(attributes.queryParams.*"object-code" map (value, index) -> {
+    "object-code": value
+})}
+var sysApiQueryParams = {
+    "ic-related-parties": trim(attributes.queryParams."ic-related-parties"),
+    "year": trim(attributes.queryParams.year) as Number default 0,
+    "page" : trim(attributes.queryParams.page) as Number default 1,
+	"limit": trim(attributes.queryParams.limit) as Number default 1,
+	"offset":(trim(attributes.queryParams.page) - 1)*trim(attributes.queryParams.limit)
+}
+---
+objectCodes ++ sysApiQueryParams]]></ee:set-variable>
+				<ee:set-variable variableName="page" ><![CDATA[%dw 2.0
+output application/java
+---
+attributes.queryParams.page]]></ee:set-variable>
+				<ee:set-variable variableName="limit" ><![CDATA[%dw 2.0
+output application/java
+---
+attributes.queryParams.limit]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<logger level="INFO" doc:name="Log Query Parameters" doc:id="c0df201e-2d29-47b8-93ef-7b37f8690aeb" message="#[attributes.queryParams]"/>
+		<scatter-gather doc:name="Scatter-Gather" doc:id="44f9316e-da9c-4d65-af2c-60771ff6bf4f" >
+			<route >
+				<flow-ref doc:name="impl-process-transactions-requests:get-ems-transactions-data:subflow" doc:id="e52cc15b-a0fd-4a24-98e7-5146b88736eb" name="impl-process-transactions-requests:get-ems-transactions-data:subflow"/>
+			</route>
+			<route >
+				<flow-ref doc:name="impl-process-transactions-requests:get-masterpiece-transactions-data:subflow" doc:id="0adb11a0-638d-4812-9152-75f57480a2e2" name="impl-process-transactions-requests:get-masterpiece-transactions-data:subflow"/>
+			</route>
+			<route >
+				<flow-ref doc:name="impl-process-transactions-requests:get-ceds-transactions-data:subflow" doc:id="43329855-1dff-42ee-bd68-f3766bb94132" name="impl-process-transactions-requests:get-ceds-transactions-data:subflow"/>
+			</route>
+		</scatter-gather>
+		<logger level="INFO" doc:name="Log Scatter gather completed" doc:id="e3aaba77-db2a-4ced-bf3f-ebd086684a4a" message="Scatter gather completed"/>
+		<ee:transform doc:name="Join payload from CEDS, MasterPiece and EMS ,Set Variable Meta" doc:id="f6ca1fb3-c8fe-4966-98bf-42d2cc0db37b" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json indent=false
+---
+flatten(payload..payload)]]></ee:set-payload>
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="meta" ><![CDATA[%dw 2.0
+output application/json
+var records = (vars.emsMeta.totalRecords) + (vars.cedsMeta.totalRecords) + (vars.mpMeta.totalRecords)
+var pages = max([vars.emsMeta.totalPages, vars.cedsMeta.totalPages, vars.mpMeta.totalPages])
+---
+{
+	"pageNumber": vars.page,
+	"limit": vars.limit,
+	"totalRecords": records as String,
+	"totalPages": pages
+}]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<ee:transform doc:name="Join Meta and payload from CEDS, MasterPiece and EMS" doc:id="f444d850-b867-4b38-86cb-8b1397861d1f" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"_meta": vars.meta,
+	"payload": flatten(payload..payload)
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="Log Total Record Size Pages" doc:id="c5251c13-7379-4045-a24c-5d0b33805107" message="#['Total Record Size is :$(payload.'_meta'.totalRecords) and Total Pages are : $(payload.'_meta'.totalPages)']" />
+		<logger level="INFO" doc:name="Log End Transactions Requests" doc:id="228d1629-847e-4a6b-8032-8d377bda43ef" message="Log End Transactions Requests"/>
+	</sub-flow>
+	<sub-flow name="impl-process-transactions-requests:get-ems-transactions-data:subflow" doc:id="4114fef4-04f4-4e75-9609-00ae53755656" >
+		<choice doc:name="Choice" doc:id="abfcb558-86dd-4766-a041-e118631d7ad0">
+					<when expression='#[(vars.sourceSystem."source-system" contains("EMS"))]'>
+				<logger level="INFO" doc:name="Log Start EMS Transactions Requests" doc:id="d28b3be7-2e70-4fe2-a63b-457e3ec24051" message="Start EMS Transactions Requests" />
+				<flow-ref doc:name="system-ems-db-api:get-financial-data:subflow" doc:id="d8331907-51de-44dd-a9fc-f3abaa1cbeb4" name="system-ems-db-api:get-financial-data:subflow" />
+				<ee:transform doc:name="Set Variable emsMeta" doc:id="7045bb2b-6a8a-4075-9b86-feb1eaa39d01">
+					<ee:message>
+					</ee:message>
+					<ee:variables >
+						<ee:set-variable variableName="emsMeta" ><![CDATA[%dw 2.0
+output application/java
+---
+{
+	"totalRecords": payload.'_meta'.totalRecords default 0,
+	"totalPages": payload.'_meta'.totalPages default 0
+}]]></ee:set-variable>
+					</ee:variables>
+				</ee:transform>
+				<logger level="INFO" doc:name="Log End EMS Transactions Requests" doc:id="3526c111-18dc-4276-8fb3-785f18af6b8d" message="End EMS Transactions Requests" />
+					</when>
+			<otherwise>
+						<logger level="DEBUG" doc:name="Log Choice Condition (DEBUG)" doc:id="91a5751e-0d4c-4675-ae4f-ffaf4fef93d2" message="Transaction Request doesnt need EMS Data" />
+				<ee:transform doc:name="Transform to Pass Empty Value, Set Variable emsMeta" doc:id="3140532e-1f87-499b-b002-6ec2535f7d90" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+---
+[]]]></ee:set-payload>
+					</ee:message>
+					<ee:variables >
+						<ee:set-variable variableName="emsMeta" ><![CDATA[%dw 2.0
+output application/java
+---
+{
+	"totalRecords":0,
+	"totalPages":0
+}]]></ee:set-variable>
+					</ee:variables>
+				</ee:transform>
+					</otherwise>
+				</choice>
+	</sub-flow>
+	<sub-flow name="impl-process-transactions-requests:get-masterpiece-transactions-data:subflow" doc:id="fca0e56c-dcd2-4af2-9f2e-3bb109c466cb" >
+		<choice doc:name="Choice" doc:id="f922dde3-4d54-4f54-80c3-f28f1c01b54a">
+					<when expression='#[(vars.sourceSystem."source-system" contains("MP"))]'>
+				<logger level="INFO" doc:name="Log Start MasterPiece Transactions Requests" doc:id="328aea69-de23-4d60-b361-b4340b66c52c" message="Start MasterPiece Transactions Requests" />
+				<flow-ref doc:name="system-masterpiece-db-api:get-financial-data:subflow" doc:id="6f937ed4-5c71-4fce-83a7-fb5552eecc0f" name="system-masterpiece-db-api:get-financial-data:subflow" />
+				<ee:transform doc:name="Set Variable mpMeta" doc:id="de0a1a80-931c-4d16-8273-2bbc6ec90f75">
+					<ee:message>
+					</ee:message>
+					<ee:variables >
+						<ee:set-variable variableName="mpMeta" ><![CDATA[%dw 2.0
+output application/java
+---
+{
+	"totalRecords": payload.'_meta'.totalRecords default 0,
+	"totalPages": payload.'_meta'.totalPages default 0
+}]]></ee:set-variable>
+					</ee:variables>
+				</ee:transform>
+				<logger level="INFO" doc:name="Log End MasterPiece Transactions Requests" doc:id="0440a55f-29e2-443c-8a75-614090b5de08" message="End MasterPiece Transactions Requests" />
+					</when>
+			<otherwise>
+						<logger level="DEBUG" doc:name="Log Choice Condition (DEBUG)" doc:id="c9669fad-acf1-437b-8d84-5363d9c3ab8a" message="Transaction Request doesnt need Masterpiece Data" />
+				<ee:transform doc:name="Transform to Pass Empty Value, Set Variable mpMeta" doc:id="458263aa-ce3b-42dd-968f-a94005174cae" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+---
+[]]]></ee:set-payload>
+					</ee:message>
+					<ee:variables >
+						<ee:set-variable variableName="mpMeta" ><![CDATA[%dw 2.0
+output application/java
+---
+{
+	"totalRecords":0,
+	"totalPages":0
+}]]></ee:set-variable>
+					</ee:variables>
+				</ee:transform>
+					</otherwise>
+				</choice>
+	</sub-flow>
+	<sub-flow name="impl-process-transactions-requests:get-ceds-transactions-data:subflow" doc:id="91b91a49-e919-4c73-9ecb-190e9a2f7715" >
+		<choice doc:name="Choice" doc:id="1f31a87c-24a7-41f6-82fe-a2b2e8a0e4e0">
+					<when expression='#[(vars.sourceSystem."source-system" contains("CEDS"))]'>
+				<logger level="INFO" doc:name="Log Start CEDS Transactions Requests" doc:id="8bb6dbf2-a43c-4115-92c1-fe481880577a" message="Start CEDS Transactions Requests" />
+				<flow-ref doc:name="system-ceds-db-api:get-financial-data:subflow" doc:id="ca602ff6-1c6a-499e-9f8b-05674ed867ce" name="system-ceds-db-api:get-financial-data:subflow" />
+				<ee:transform doc:name="Set Variable cedsMeta" doc:id="d17f39c9-5146-4c40-958b-114a978f128a">
+					<ee:message>
+					</ee:message>
+					<ee:variables >
+						<ee:set-variable variableName="cedsMeta" ><![CDATA[%dw 2.0
+output application/java
+---
+{
+	"totalRecords": payload.'_meta'.totalRecords default 0,
+	"totalPages": payload.'_meta'.totalPages default 0
+}]]></ee:set-variable>
+					</ee:variables>
+				</ee:transform>
+				<logger level="INFO" doc:name="Log End CEDS Transactions Requests" doc:id="1994e19e-af44-4c16-8ba0-729157d72598" message="End CEDS ransactions Requests" />
+					</when>
+			<otherwise>
+						<logger level="DEBUG" doc:name="Log Choice Condition (DEBUG)" doc:id="e00b8fb6-1892-4f4d-95f6-c0e4d108c13c" message="Transaction Request doesnt need CEDS Data" />
+				<ee:transform doc:name="Transform to Pass Empty Value, Set Variable cedsMeta" doc:id="30932f25-b993-4441-8e45-8e49181caaca" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+---
+[]]]></ee:set-payload>
+					</ee:message>
+					<ee:variables >
+						<ee:set-variable variableName="cedsMeta" ><![CDATA[%dw 2.0
+output application/java
+---
+{
+	"totalRecords":0,
+	"totalPages":0
+}]]></ee:set-variable>
+					</ee:variables>
+				</ee:transform>
+					</otherwise>
+				</choice>
+	</sub-flow>
+</mule>

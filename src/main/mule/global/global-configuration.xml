@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:tls="http://www.mulesoft.org/schema/mule/tls"
+	xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit"
+	xmlns:jms="http://www.mulesoft.org/schema/mule/jms"
+	xmlns:secure-properties="http://www.mulesoft.org/schema/mule/secure-properties"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="
+http://www.mulesoft.org/schema/mule/tls http://www.mulesoft.org/schema/mule/tls/current/mule-tls.xsd 
+http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd 
+http://www.mulesoft.org/schema/mule/jms http://www.mulesoft.org/schema/mule/jms/current/mule-jms.xsd 
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd 
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/secure-properties http://www.mulesoft.org/schema/mule/secure-properties/current/mule-secure-properties.xsd">
+
+	<configuration-properties doc:name="Configuration properties" doc:id="59ac5be8-a5ba-4c22-9e53-18278bf8f003" file="config\app-config-${env}.properties" />
+	<secure-properties:config name="Secure_Properties_Config" doc:name="Secure Properties Config" doc:id="d054485d-6153-4565-88ac-cae479e147eb" file="config\app-config-${env}.properties" key="${secure.key}">
+		<secure-properties:encrypt algorithm="Blowfish" />
+	</secure-properties:config>
+	<jms:config name="JMS_Config_Topic" doc:name="JMS Config" doc:id="2f691339-3754-4f25-bae4-83c417778056" >
+		<jms:generic-connection specification="JMS_2_0" username="${mq.broker.username}" password="${mq.broker.password}">
+			<reconnection>
+				<reconnect-forever frequency="${mq.reconnection.frequency}" />
+			</reconnection>
+			<jms:connection-factory >
+				<jms:jndi-connection-factory connectionFactoryJndiName="ConnectionFactory">
+					<jms:name-resolver-builder jndiInitialContextFactory="org.apache.activemq.artemis.jndi.ActiveMQInitialContextFactory" jndiProviderUrl="${mq.broker.url}" />
+				</jms:jndi-connection-factory>
+			</jms:connection-factory>
+		</jms:generic-connection>
+		<jms:consumer-config >
+			<jms:consumer-type >
+				<jms:topic-consumer shared="true" />
+			</jms:consumer-type>
+		</jms:consumer-config>
+		<jms:producer-config persistentDelivery="true" timeToLive="${mq.timetolive}" priority="${mq.priority}"/>
+	</jms:config>
+	<configuration-properties doc:name="Configuration properties" doc:id="29160f6b-b151-4edf-9dd0-8054400b6db4" file="config/app-config-global.properties" />
+	<http:request-config
+		name="ems-system-api-private-httpRequesterConfig"
+		doc:name="HTTP Request configuration"
+		doc:id="98afee49-708b-4959-a65b-4bfeb41f731a"
+		basePath="${ems.sys.api.basepath}"
+		responseTimeout="${ems.sys.api.response.timeout}">
+		<http:request-connection
+			protocol="${ems.sys.api.protocol}"
+			host="${ems.sys.api.host}" port="${ems.sys.api.port}"
+			maxConnections="${ems.sys.api.maxconnections}"
+			connectionIdleTimeout="${ems.sys.api.timeout}"
+			responseBufferSize="${ems.sys.api.bufferSize}">
+			<reconnection >
+				<reconnect frequency="${ems.sys.reconnection.frequency}" count="${ems.sys.reconnection.attempts}" />
+			</reconnection>
+		</http:request-connection>
+	</http:request-config>
+	<http:request-config
+		name="masterpiece-system-api-private-httpRequesterConfig"
+		doc:name="HTTP Request configuration"
+		doc:id="6936ab7f-95d7-4ac5-bb64-e27feb3f088d"
+		basePath="${masterpiece.sys.api.basepath}"
+		responseTimeout="${masterpiece.sys.api.response.timeout}">
+		<http:request-connection
+			protocol="${masterpiece.sys.api.protocol}"
+			host="${masterpiece.sys.api.host}" port="${masterpiece.sys.api.port}"
+			maxConnections="${masterpiece.sys.api.maxconnections}"
+			connectionIdleTimeout="${masterpiece.sys.api.timeout}"
+			responseBufferSize="${masterpiece.sys.api.bufferSize}">
+			<reconnection >
+				<reconnect frequency="${masterpiece.sys.reconnection.frequency}" count="${masterpiece.sys.reconnection.attempts}" />
+			</reconnection>
+		</http:request-connection>
+	</http:request-config>
+	<http:request-config
+		name="ceds-system-api-private-httpRequesterConfig"
+		doc:name="HTTP Request configuration"
+		doc:id="6287534f-8cb6-4e48-8684-71fa025fdbe1"
+		basePath="${ceds.sys.api.basepath}"
+		responseTimeout="${ceds.sys.api.response.timeout}">
+		<http:request-connection
+			protocol="${ceds.sys.api.protocol}"
+			host="${ceds.sys.api.host}" port="${ceds.sys.api.port}"
+			maxConnections="${ceds.sys.api.maxconnections}"
+			connectionIdleTimeout="${ceds.sys.api.timeout}"
+			responseBufferSize="${ceds.sys.api.bufferSize}">
+			<reconnection >
+				<reconnect frequency="${ceds.sys.reconnection.frequency}" count="${ceds.sys.reconnection.attempts}" />
+			</reconnection>
+		</http:request-connection>
+	</http:request-config>
+	<http:request-config
+		name="board-system-api-private-httpRequesterConfig"
+		doc:name="HTTP Request configuration"
+		doc:id="8a7f3956-4c92-4957-9606-12a5b53a8cf0"
+		basePath="${board.sys.api.basepath}"
+		responseTimeout="${board.sys.api.response.timeout}">
+		<http:request-connection
+			protocol="${board.sys.api.protocol}"
+			host="${board.sys.api.host}" port="${board.sys.api.port}"
+			maxConnections="${board.sys.api.maxconnections}"
+			connectionIdleTimeout="${board.sys.api.timeout}"
+			responseBufferSize="${board.sys.api.bufferSize}">
+			<reconnection >
+				<reconnect frequency="${board.sys.reconnection.frequency}" count="${board.sys.reconnection.attempts}" />
+			</reconnection>
+		</http:request-connection>
+	</http:request-config>
+	<http:request-config
+		name="imd-system-api-private-httpRequesterConfig"
+		doc:name="HTTP Request configuration"
+		doc:id="27ef84c2-f74f-41ec-95f8-810fce13ecb9"
+		basePath="${imd.sys.api.basepath}"
+		responseTimeout="${imd.sys.api.response.timeout}">
+		<http:request-connection
+			protocol="${imd.sys.api.protocol}"
+			host="${imd.sys.api.host}" port="${imd.sys.api.port}"
+			maxConnections="${imd.sys.api.maxconnections}"
+			connectionIdleTimeout="${imd.sys.api.timeout}"
+			responseBufferSize="${imd.sys.api.bufferSize}">
+			<reconnection >
+				<reconnect frequency="${imd.sys.reconnection.frequency}" count="${imd.sys.reconnection.attempts}" />
+			</reconnection>
+		</http:request-connection>
+	</http:request-config>
+</mule>
+	

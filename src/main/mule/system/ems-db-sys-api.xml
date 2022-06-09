@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:db="http://www.mulesoft.org/schema/mule/db"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd">
+	<sub-flow name="system-ems-db-api:get-financial-data:subflow" doc:id="40c567a8-d293-4387-b963-8eeb6867a1ed" >
+		<logger level="INFO" doc:name="Log Start EMS API Flow" doc:id="99669c62-0d6a-4282-b437-6385b7255ef1" message="Log Start EMS API Flow"/>
+		<logger level="INFO" doc:name="Log Financial Path" doc:id="5fbda951-e462-44df-aa19-ae2925fcbd35" message='#[vars.financialPath]'/>
+		<http:request method="GET" doc:name="Get EMS DB Financial Data" doc:id="23566292-36d8-41cd-9db0-c6e31122611b" config-ref="ems-system-api-private-httpRequesterConfig" path="#[vars.financialPath]" sendCorrelationId="ALWAYS">
+			<http:headers ><![CDATA[#[output application/java
+---
+{
+	"X-Source-Id" : vars.xSourceId
+}]]]></http:headers>
+			<http:query-params ><![CDATA[#[vars.emsQueryParams]]]></http:query-params>
+		</http:request>
+		<logger level="INFO" doc:name="Log End EMS API Flow" doc:id="b4a4a424-af1c-49de-9e35-4b92a96239dc" message="Log End EMS API Flow"/>
+	</sub-flow>
+</mule>

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:db="http://www.mulesoft.org/schema/mule/db"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd">
+	<sub-flow name="system-masterpiece-db-api:get-financial-data:subflow" doc:id="e3e7369f-1a05-4a22-910d-3898302f2b24" >
+		<logger level="INFO" doc:name="Log Start MasterPiece API Flow" doc:id="48f6516a-463c-4d1f-890f-1ce2366d5080" message="Log Start MasterPiece API Flow"/>
+		<logger level="INFO" doc:name="Log Financial Path" doc:id="dc2211b6-109e-4cc0-b2ff-b3f914c02540" message="#[vars.financialPath]"/>
+		<http:request method="GET" doc:name="Get MasterPiece DB Financial Data" doc:id="5ac61b7c-1d39-4ecb-9db8-b31f1d32c91d" config-ref="masterpiece-system-api-private-httpRequesterConfig" path="#[vars.financialPath]" sendCorrelationId="ALWAYS">
+			<http:headers ><![CDATA[#[output application/java
+---
+{
+	"X-Source-Id" : vars.xSourceId
+}]]]></http:headers>
+			<http:query-params ><![CDATA[#[vars.mpQueryParams]]]></http:query-params>
+		</http:request>
+		<logger level="INFO" doc:name="Log End MasterPiece API Flow" doc:id="3f87e579-586f-4d9b-9b4a-4c7361e26a9f" message="Log End MasterPiece API Flow"/>
+	</sub-flow>
+</mule>

@@ -1,0 +1,188 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<sub-flow name="impl-process-trial-balance-requests:get-trialbalance:subflow" doc:id="1d2cba1f-4d38-42dc-9798-d2bd5adffe18" >
+		<logger level="INFO" doc:name="Log Start Trial Balance Requests" doc:id="7c0d372b-cd36-46f3-beec-97ef442e8b8d" message="Log Start Trial Balance Requests"/>
+		<ee:transform doc:name="Set Variables: sqlQueryParams, financialPath" doc:id="a4541b52-9780-4d81-ab79-935c266862f9" >
+			<ee:message >
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="financialPath" ><![CDATA[%dw 2.0
+output application/java
+---
+Mule::p('system.api.trial_balance.path')]]></ee:set-variable>
+				<ee:set-variable variableName="emsQueryParams" ><![CDATA[%dw 2.0
+output application/java
+var ratioValue:Number = Mule::p('limit.ratio.value.ems') as Number
+---
+{
+	"period": trim(attributes.queryParams.period) as Number default 0,
+	"year": trim(attributes.queryParams.year) as Number default 0,
+	"page": trim(attributes.queryParams.page) as Number default 0,
+	"limit": round(trim(attributes.queryParams.limit) / ratioValue) as Number default 0,
+	"offset": (trim(attributes.queryParams.page) - 1)*trim(attributes.queryParams.limit)
+}]]></ee:set-variable>
+				<ee:set-variable variableName="cedsQueryParams" ><![CDATA[%dw 2.0
+output application/java
+var ratioValue:Number = Mule::p('limit.ratio.value.ceds') as Number
+---
+{
+	"period": trim(attributes.queryParams.period) as Number default 0,
+	"year": trim(attributes.queryParams.year) as Number default 0,
+	"page": trim(attributes.queryParams.page) as Number default 1,
+	"limit": round(trim(attributes.queryParams.limit) / ratioValue) as Number default 1,
+	"offset": (trim(attributes.queryParams.page) - 1)*trim(attributes.queryParams.limit)
+}]]></ee:set-variable>
+				<ee:set-variable variableName="mpQueryParams" ><![CDATA[%dw 2.0
+output application/java
+var recordLimit = trim(attributes.queryParams.limit) as Number default 1
+var ratioValue:Number = Mule::p('limit.ratio.value.masterpiece') as Number
+---
+{
+	"period": trim(attributes.queryParams.period) as Number default 0,
+	"year": trim(attributes.queryParams.year) as Number default 0,
+	"page": trim(attributes.queryParams.page) as Number default 1,
+	"limit": round(trim(attributes.queryParams.limit) / ratioValue) as Number default 1,
+	"offset": (trim(attributes.queryParams.page) - 1) * recordLimit
+}]]></ee:set-variable>
+				<ee:set-variable variableName="page" ><![CDATA[%dw 2.0
+output application/java
+---
+trim(attributes.queryParams.page) as Number default 1]]></ee:set-variable>
+				<ee:set-variable variableName="limit" ><![CDATA[%dw 2.0
+output application/java
+---
+trim(attributes.queryParams.limit) as Number default 1]]></ee:set-variable>
+				<ee:set-variable variableName="imdPath" ><![CDATA[%dw 2.0
+output application/java
+---
+Mule::p('imd.sys.api.child_parent_mapping.path')]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<logger level="INFO" doc:name="Log Query Parameters" doc:id="0383c7ea-9b73-4a63-8b99-c251253d9e7c" message="#[message.attributes.queryParams]"/>
+		<scatter-gather doc:name="Scatter-Gather" doc:id="86556895-2446-435f-9d89-40597afb32f7" >
+			<route >
+				<flow-ref doc:name="impl-process-trial-balance-requests:get-ems-trialbalance-data:subflow" doc:id="1935470e-986b-4ef2-b1f7-63220150a4bd" name="impl-process-trial-balance-requests:get-ems-trialbalance-data:subflow"/>
+			</route>
+			<route >
+				<flow-ref doc:name="impl-process-trial-balance-requests:get-ceds-trialbalance-data:subflow" doc:id="8145a203-fc50-44f8-8e12-cb245b776bf0" name="impl-process-trial-balance-requests:get-ceds-trialbalance-data:subflow"/>
+			</route>
+			<route >
+				<flow-ref doc:name="impl-process-trial-balance-requests:get-masterpiece-trialbalance-data:subflow" doc:id="f61b2662-b2a2-4094-90a1-eb44819135a7" name="impl-process-trial-balance-requests:get-masterpiece-trialbalance-data:subflow"/>
+			</route>
+		</scatter-gather>
+		<logger level="INFO" doc:name="Log Scatter gather completed" doc:id="7caf7b41-6988-4163-8f06-7ec09ededb49" message="Scatter gather completed"/>
+		<ee:transform doc:name="Join payload from CEDS, MasterPiece and EMS" doc:id="ba3f9253-adb8-4696-841e-0ec0feccb0cc" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json indent = false
+var records = (vars.emsMeta.totalRecords) + (vars.cedsMeta.totalRecords) + (vars.mpMeta.totalRecords)
+var pages = max([vars.emsMeta.totalPages, vars.cedsMeta.totalPages, vars.mpMeta.totalPages])
+---
+{
+	"_meta": {
+		"pageNumber": vars.page,
+		"limit": vars.limit,
+		"totalRecords": records,
+		"totalPages": pages
+	},
+	"payload": flatten(payload..payload)
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="Log Total Record Size Pages" doc:id="ee813652-b507-4fda-b2a5-cc4c5cf883e8" message="#['Total Record Size is :$(payload.'_meta'.totalRecords) and Total Pages are : $(payload.'_meta'.totalPages)']"/>
+		<logger level="INFO" doc:name="Log End Trial Balance Requests" doc:id="6e6658cb-2116-4a11-b21d-8ae1127271ee" message="Log End Trial Balance Requests"/>
+	</sub-flow>
+	<sub-flow name="impl-process-trial-balance-requests:get-ems-trialbalance-data:subflow" doc:id="bcbeb032-031e-4df9-9511-93811cd61600" >
+		<logger level="INFO" doc:name="Log Start EMS Trial Balance Requests" doc:id="db9422dd-9254-4c7e-ba73-f8b5ac2d1672" message="Start EMS Trial Balance Requests" />
+		<flow-ref doc:name="system-ems-db-api:get-trialbalance:subflow" doc:id="951c418e-1b51-43f1-afbb-0cc531d5fc7a" name="system-ems-db-api:get-financial-data:subflow"/>
+		<ee:transform doc:name="Set Paginated Data" doc:id="b05f2978-ea24-4cd1-ace3-8ef94a910ebb" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+---
+if(payload=="" or payload ==[])[]
+else (payload.payload)]]></ee:set-payload>
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="emsMeta" ><![CDATA[%dw 2.0
+output application/java
+---
+{
+	"totalRecords": payload.'_meta'.totalRecords default 0,
+	"totalPages": payload.'_meta'.totalPages default 1
+}]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<logger level="INFO" doc:name="Log End EMS Trial Balance Requests" doc:id="a37a1498-aff8-4463-9964-1535e4cadf46" message="End EMS Trial Balance Requests"/>
+	</sub-flow>
+	<sub-flow name="impl-process-trial-balance-requests:get-masterpiece-trialbalance-data:subflow" doc:id="27939ed5-c0ff-41b7-aef3-22dc4e4c1c09" >
+		<logger level="INFO" doc:name="Log Start MasterPiece Trial Balance Requests" doc:id="7edab0cd-114d-4d7f-be02-456b58d07045" message="Start MasterPiece Trial Balance Requests"/>
+		<flow-ref doc:name="system-masterpiece-db-api:get-trialbalance:subflow" doc:id="f3164574-cbd7-4937-80df-79afb4e40319" name="system-masterpiece-db-api:get-financial-data:subflow"/>
+		<ee:transform doc:name="Set Paginated Data" doc:id="fa712e1b-3ea5-4e4c-8b26-df796e5c0019" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+---
+if(payload=="" or payload ==[])[]
+else (payload.payload)]]></ee:set-payload>
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="mpMeta" ><![CDATA[%dw 2.0
+output application/java
+---
+{
+	"totalRecords": payload.'_meta'.totalRecords default 0,
+	"totalPages": payload.'_meta'.totalPages default 1
+}]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<logger level="INFO" doc:name="Log End MasterPiece Trial Balance Requests" doc:id="29feae0b-1514-4810-a071-f56bbfa5d047" message="End MasterPiece Trial Balance Requests"/>
+	</sub-flow>
+	<sub-flow name="impl-process-trial-balance-requests:get-ceds-trialbalance-data:subflow" doc:id="592203b8-09e0-4f7c-9c36-364eead19110" >
+		<logger level="INFO" doc:name="Log Start CEDS Trial Balance Requests" doc:id="1b1244d6-2b4c-47ae-bc0c-af72511b0732" message="Start CEDS Trial Balance Requests"/>
+		<flow-ref doc:name="system-ceds-db-api:get-trialbalance:subflow" doc:id="a9f384a8-d2c5-487f-b636-67391da0fd95" name="system-ceds-db-api:get-financial-data:subflow" />
+		<flow-ref doc:name="system-imd-db-api:get-mapping-data:subflow - Target: siteParentMappingData" doc:id="6885d07b-2a00-45a3-822f-7eecc8abb1a8" name="system-imd-db-api:get-mapping-data:subflow" target="siteParentMappingData"/>
+		<ee:transform doc:name="Set Filtered and Paginated data" doc:id="e64ede58-6a07-4b28-a857-1aee5958850e" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+import getSiteId from modules::siteids
+import getChildParentMap from modules::siteids
+---
+if(payload=="" or payload ==[])[]
+else (payload.payload filter not (($.company == '6' or $.company == '7' or $.company == 6 or $.company == 7) or($.localAccount contains p('constant.digit.5110'))) map ( item , index ) -> {
+	month: item.month default "",
+	scenario: item.scenario default "",
+	consolidationNode: item.consolidationNode default "",
+	reportingUnit: getSiteId(getChildParentMap(vars.siteParentMappingData,item.reportingUnit)),
+	localAccount: (item.localAccount default ""),
+	icRelatedParties: item.icRelatedParties default 0,
+	investmentCost: item.investmentCost default "",
+	company: item.company default "",
+	glSource: item.glSource default "",
+	layer: item.layer default "",
+	movement: item.movement default "",
+	localAccountCategory: item.localAccountCategory,
+	localTrialBalances: item.localTrialBalances default 0,
+	localAccountCode: item.localAccountCode default "",
+	localAccountDescription: item.localAccountDescription default ""
+})
+]]></ee:set-payload>
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="cedsMeta" ><![CDATA[%dw 2.0
+output application/java
+---
+{
+	"totalRecords": payload.'_meta'.totalRecords default 0,
+	"totalPages": payload.'_meta'.totalPages default 1
+}]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<logger level="INFO" doc:name="Log End CEDS Trial Balance Requests" doc:id="216d1bb8-1d5c-48f6-9975-33531e3e05ee" message="End CEDS Trial Balance Requests"/>
+	</sub-flow>
+</mule>

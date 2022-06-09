@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:db="http://www.mulesoft.org/schema/mule/db"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd">
+	<sub-flow name="system-board-api:get-parent-child-sites-data:subflow" doc:id="a2f825b6-6e71-429d-8e33-013cb5d71e82" >
+		<logger level="INFO" doc:name="Log Start Board API Flow" doc:id="ad78f9f4-270a-4efe-94e9-1182caaeb962" message="Log Start Board API Flow"/>
+		<http:request method="GET" doc:name="Get Board Parent Child Sites Data" doc:id="f36af6ef-5415-4cfd-b4f1-c3a02d6fb507" config-ref="board-system-api-private-httpRequesterConfig" path="${board.sys.api.child_parent_mapping.path}" sendCorrelationId="ALWAYS">
+			<http:headers ><![CDATA[#[output application/java
+---
+{
+	"X-Source-Id" : vars.xSourceId
+}]]]></http:headers>
+		</http:request>
+		<logger level="INFO" doc:name="Log End Board API Flow" doc:id="d2d26acf-4dac-45ca-944b-c0b712da9edd" message="Log End Board API Flow"/>
+	</sub-flow>
+</mule>

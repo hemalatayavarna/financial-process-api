@@ -1,0 +1,110 @@
+#%RAML 1.0
+title: Financial Process API
+version: v1
+protocols: [HTTP, HTTPS]
+mediaType: application/json
+
+traits:
+  pageable:
+    queryParameters:
+      page:
+        displayName: The Page Number of the list of Records
+        type: number
+        format: int
+        required: true
+      limit:
+        displayName: Number of Records present in each Page
+        type: number
+        format: int
+        required: true
+  sourceIdHeader:
+    headers:
+      X-Source-Id:
+        displayName: X-Source-Id
+        type: string
+        description: Source of the request
+        required: false
+
+/health:
+  get:
+    displayName: Get Health
+    description: Return message to indicate the system health status
+
+    responses:
+      200:
+        body:
+          application/json:
+            example: !include examples/health-example.json
+
+/mappings:
+  /child-parent-sites:
+    get:
+      is:
+        - sourceIdHeader
+      displayName: Child Parent Sites Mapping
+      description: Retrieves Mapping from Board
+      responses:
+        201:
+          body:
+            application/json:
+              example: !include examples/mapping-child-parent-sites-response.json
+
+/reports:
+  /trial-balance:
+    get:
+      is:
+        - pageable
+        - sourceIdHeader
+      displayName: Finance Trial Balance
+      description: Retrieves Trial Balance data from the EMS, MasterPiece and CEDS DBs
+      queryParameters:
+        year:
+          displayName: GL Balance Year
+          required: true
+        period:
+          displayName: GL Balance year's month
+          required: true
+
+      responses:
+        200:
+          body:
+            application/json:
+              example: !include examples/financial-process-api-trial-balance-example.json
+    /transactions:
+      get:
+        is:
+          - pageable
+          - sourceIdHeader
+        displayName: Finance Transactions
+        description: Retrieves transactions data from the EMS, MasterPiece and CEDS DBs
+        queryParameters:
+          source-system:
+            type: array
+            items:
+              enum: [CEDS, MP, EMS]
+            displayName: The Source System - Permutations of [CEDS, MP, EMS]
+            required: true
+
+          reporting-unit:
+            displayName: The Reporting Unit
+            type: string
+            required: false
+          ic-related-parties:
+            displayName: IC and Related Parties
+            type: string
+            required: false
+          year:
+            displayName: The Fiscal year
+            type: number
+            format: int
+            required: true
+          object-code:
+            type: array
+            displayName: The Object Code
+            required: true
+
+        responses:
+          200:
+            body:
+              application/json:
+                example: !include examples/financial-process-api-transactions-example.json

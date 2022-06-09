@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:jms="http://www.mulesoft.org/schema/mule/jms" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/jms http://www.mulesoft.org/schema/mule/jms/current/mule-jms.xsd">
+	
+	<sub-flow name="sys-jms-mq:publish-message-to-queue:subflow" doc:id="8d6b768c-f33a-4a50-ac19-4b8b19876958" >
+		<logger level="INFO" doc:name="Log Start publish message Error log event queue" doc:id="88da493b-2593-433b-a8da-12e0219adce6" message="Start publish message Error log event queue"/>
+		<logger level="DEBUG" doc:name="Log Error Message to be sent to MQ(DEBUG)" doc:id="dae74273-f3e4-46cb-b3b3-62af0fa3fbe3" message="Log Error Message to be sent to MQ: #[vars.errorMessage]"/>
+		<async doc:name="Async" doc:id="badfafbb-ca0a-467e-9f24-2fa42bf2d3bd" >
+			<jms:publish doc:name="Publish To Error MQ" doc:id="b649cb8e-0ef3-45f7-b0f6-0c496c47d4f7" config-ref="JMS_Config_Topic" destination="${mq.error.name}" destinationType="TOPIC" sendCorrelationId="ALWAYS">
+			<reconnect frequency="${mq.reconnection.frequency}" count="${mq.reconnection.attempts}" />
+			<jms:message outboundContentType="application/json">
+					<jms:body ><![CDATA[#[vars.errorMessage]]]></jms:body>
+			</jms:message>
+		</jms:publish>
+		</async>
+		<logger level="INFO" doc:name="Log End publish message Error log event queue" doc:id="7dc1ef45-5a3b-47e7-9b1a-7b8ffeb6ec59" message="End publish message Error log event queue"/>
+	</sub-flow>
+</mule>

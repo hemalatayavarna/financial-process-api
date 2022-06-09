@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd 
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+    <apikit:config name="financial-process-api-config" api="financial-process-api.raml" outboundHeadersMapName="outboundHeaders" httpStatusVarName="httpStatus" />
+    <http:listener-config name="financial-process-api-httpListenerConfig">
+        <http:listener-connection host="${http.private.host}" port="${http.private.port}" readTimeout="${http.read.timeout}" connectionIdleTimeout="${http.connection.idle.timeout}" />
+    </http:listener-config>
+    <flow name="financial-process-api-main">
+        <http:listener path="${api.http.path}${api.http.version}" config-ref="financial-process-api-httpListenerConfig" doc:name="HTTP Listener for Process API">
+            <http:response statusCode="#[vars.httpStatus default 200]">
+                <http:headers><![CDATA[#[vars.outboundHeaders default {}]]]></http:headers>
+            </http:response>
+            <http:error-response statusCode="#[vars.httpStatus default 500]">
+                <http:body><![CDATA[#[payload]]]></http:body>
+                <http:headers><![CDATA[#[vars.outboundHeaders default {}]]]></http:headers>
+            </http:error-response>
+        </http:listener>
+        <apikit:router config-ref="financial-process-api-config" />
+        <error-handler ref="api-kit-error-handler" />
+    </flow>
+    <flow name="get:\health:financial-process-api-config">
+        <ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation=" http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd  http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd" doc:name="Get Health Report">
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+  name: "Financial Process API",
+  status: "OK",
+  timestamp: (now() as DateTime) >> p('property.timezone')
+}]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+        <error-handler ref="business-error-handler" />
+    </flow>
+    <flow name="get:\reports\trial-balance:financial-process-api-config" doc:id="3cfe1952-4ca2-448e-b5ef-ee0c0dab6066">
+        <logger level="INFO" doc:name="Log Start Get TrialBalance Details" doc:id="41b80418-6c4a-4934-8b76-53a4edad37e5" message="Start Get TrialBalance Details" />
+        <flow-ref doc:name="financial-process-api:create-vars:subflow" doc:id="c357915b-bddf-4dff-9ffa-cfdb727e5af2" name="financial-process-api:create-vars:subflow"/>
+		<flow-ref doc:name="impl-process-trial-balance-requests:get-trialbalance:subflow" doc:id="b3e98987-96a3-4d9e-9750-d7102367b562" name="impl-process-trial-balance-requests:get-trialbalance:subflow" />
+        <logger level="INFO" doc:name="Log End Get TrialBalance Details" doc:id="9c4b303b-9df9-4a23-a9f7-ac00affe0001" message="End Get TrialBalance Details" />
+        <error-handler ref="business-error-handler" />
+    </flow>
+    <flow name="get:\reports\trial-balance\transactions:financial-process-api-config" doc:id="76ed85ea-b994-433e-ae8e-24c6e539c9ff">
+        <logger level="INFO" doc:name="Log Start Get Transactions Details" doc:id="90a1076b-f695-4769-b84b-313ea92dd377" message="Start Get Transactions Details" />
+        <flow-ref doc:name="financial-process-api:create-vars:subflow" doc:id="eb12f714-9f29-4f41-86af-157370ed94a3" name="financial-process-api:create-vars:subflow"/>
+		<flow-ref doc:name="impl-process-transactions-requests:get-transactions:subflow" doc:id="b10a5a8c-be11-478d-abf4-9ec8ee5dd71e" name="impl-process-transactions-requests:get-transactions:subflow" />
+        <logger level="INFO" doc:name="Log End Get Transactions Details" doc:id="3894688d-2666-4cd5-9145-7c6d10987b1a" message="End Get Transactions Details" />
+        <error-handler ref="business-error-handler" />
+    </flow>
+    <flow name="get:\mappings\child-parent-sites:financial-process-api-config" doc:id="e5a255e4-4171-4fd2-ac2f-5fc6c4d398aa">
+        <logger level="INFO" doc:name="Start Post Child Parent Site Mappings" doc:id="eec4b3a2-3e99-4ef2-9447-efb703583727" message="Start Post Child Parent Site Mappings" />
+		<flow-ref doc:name="financial-process-api:create-vars:subflow" doc:id="d7a2b57d-7c0f-4cab-ad1f-3f46ad922e37" name="financial-process-api:create-vars:subflow"/>
+		<flow-ref doc:name="impl-child-parent-mapping-requests:post:subflow" doc:id="23f951e2-40e7-44e4-9f17-d985b8621b7a" name="impl-child-parent-mapping-requests:post:subflow"/>
+		<logger level="INFO" doc:name="End Post Child Parent Site Mappings" doc:id="bf319c0f-e86c-4305-86e5-d9b0e651d1c4" message="End Post Child Parent Site Mappings" />
+		<error-handler ref="business-error-handler" />
+    </flow>
+	<sub-flow name="financial-process-api:create-vars:subflow" doc:id="de5b9374-ce49-497f-a7b7-f8715bf33b1d" >
+		<ee:transform doc:name="Set variables: xSourceId" doc:id="98355ed9-8197-4ce7-9d96-83418a80524d" >
+			<ee:message >
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="xSourceId" ><![CDATA[%dw 2.0
+output application/java
+---
+attributes.headers.'X-Source-Id' as String default ""]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+	</sub-flow>
+</mule>

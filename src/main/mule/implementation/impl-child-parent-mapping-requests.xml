@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<sub-flow name="impl-child-parent-mapping-requests:post:subflow" doc:id="eef8bb05-81e6-4951-adca-ab10e716eeac" >
+		<logger level="INFO" doc:name="Log Start Child Parent Mapping Implementation Requests" doc:id="d107a914-fec5-403a-baff-6849211a8e34" message="Log Start Child Parent Mapping Implementation Requests"/>
+		<flow-ref doc:name="system-board-api:get-parent-child-sites-data:subflow" doc:id="38dfeaa4-abce-4887-80cb-d29beb1d75a9" name="system-board-api:get-parent-child-sites-data:subflow"/>
+		<ee:transform doc:name="Set Variables: imdPath" doc:id="60acf031-5524-4531-ac34-0d4efa783e07">
+			<ee:message />
+			<ee:variables>
+				<ee:set-variable variableName="imdPath" ><![CDATA[%dw 2.0
+output application/java
+---
+Mule::p('imd.sys.api.child_parent_mapping.path')]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<flow-ref doc:name="system-imd-db-api:post-mapping-data:subflow" doc:id="60771c8d-e17d-4e16-bd78-b27d72c30a5a" name="system-imd-db-api:post-mapping-data:subflow" />
+		<ee:transform doc:name="Set Payload" doc:id="5949c544-35c4-443b-bad1-44f53c31a8e9" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+  correlationId: correlationId
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="Log End Child Parent Mapping Implementation Requests" doc:id="3751e0cc-0fc5-4580-90a2-155296af040f" message="Log End Child Parent Mapping Implementation Requests" />
+	</sub-flow>
+</mule>

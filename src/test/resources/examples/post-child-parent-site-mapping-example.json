@@ -1,0 +1,12 @@
+[
+ {
+   "childSiteId": 218,
+   "parentSiteId": 1884,
+   "isActive": true
+ },
+ {
+   "childSiteId": 262,
+   "parentSiteId": 1884,
+   "isActive": false
+ }
+]

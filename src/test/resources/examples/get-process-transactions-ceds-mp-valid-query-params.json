@@ -1,0 +1,12 @@
+{
+	"queryParams": {
+		"year": "2021",
+		"reporting-unit": "1209",
+		"object-code": "1000",
+		"source-system": "CEDS",
+		"source-system": "MP",
+		"ic-related-parties": "TP",
+		"page":"1",
+		"limit":"2"
+	}
+}

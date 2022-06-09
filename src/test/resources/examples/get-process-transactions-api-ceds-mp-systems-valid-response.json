@@ -1,0 +1,67 @@
+{
+	"_meta": {
+		"pageNumber": "1",
+		"limit": "2",
+		"totalRecords": "4",
+		"totalPages": 1
+	},
+	"payload": [
+	{
+			"year": 2021,
+			"month": "202111",
+			"glSource": "Masterpiece",
+			"journalId": "PV2421",
+			"transactionDescription":"",
+			"accountNumber": "001-71111-0107",
+			"objectCode": "71111",
+			"accountDescription": "001711110107",
+			"amount": 5256.0,
+			"reportingUnit": "0106",
+			"reference1": "",
+			"reference2": "270521",
+			"reference4": "242021"
+		},
+		{
+			"year": 2021,
+			"month": "202111",
+			"glSource": "Masterpiece",
+			"journalId": "PV2421",
+			"transactionDescription": "",
+			"accountNumber": "001-71111-0107",
+			"objectCode": "71111",
+			"accountDescription": "001711110107",
+			"amount": 4511.5,
+			"reportingUnit": "0106",
+			"reference1": "",
+			"reference2": "270521",
+			"reference4": "242021"
+		
+		},
+		{
+			"year": 2021,
+			"month": "202107",
+			"glSource": "CEDS",
+			"journalId": "5651",
+			"transactionDescription": "Acc 065-000 12135798, 14/4/2021, Re",
+			"accountNumber": "A-ZZZ-1111",
+			"objectCode": "1111",
+			"accountDescription": "AP Batch 5651",
+			"amount": 810.0,
+			"reportingUnit": "0",
+			"companyNumber": 1
+		},
+		{
+			"year": 2021,
+			"month": "202107",
+			"glSource": "CEDS",
+			"journalId": "5651",
+			"transactionDescription": "Acc 065-000 12135798, 30/4/2021, Re",
+			"accountNumber": "A-ZZZ-1111",
+			"objectCode": "1111",
+			"accountDescription": "AP Batch 5651",
+			"amount": 20000.0,
+			"reportingUnit": "0",
+			"companyNumber": 1
+		}
+	]
+}

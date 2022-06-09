@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:db="http://www.mulesoft.org/schema/mule/db"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd">
+	<sub-flow name="system-ceds-db-api:get-financial-data:subflow" doc:id="600cac14-d659-4c20-ae09-c5e2888a098f" >
+		<logger level="INFO" doc:name="Log Start CEDS API Flow" doc:id="17283db2-a46f-49f5-9e4a-eca139fec77a" message="Log Start CEDS API Flow"/>
+		<logger level="INFO" doc:name="Log Financial Path" doc:id="0ecae4d5-bc78-4048-a6c5-c7908d9a333e" message="#[vars.financialPath]"/>
+		<http:request method="GET" doc:name="Get CEDS DB Financial Data" doc:id="025e0326-f36b-4a84-bb98-0beecd1e366b" config-ref="ceds-system-api-private-httpRequesterConfig" path="#[vars.financialPath]" sendCorrelationId="ALWAYS">
+			<http:headers ><![CDATA[#[output application/java
+---
+{
+	"X-Source-Id" : vars.xSourceId
+}]]]></http:headers>
+			<http:query-params ><![CDATA[#[vars.cedsQueryParams]]]></http:query-params>
+		</http:request>
+		<logger level="INFO" doc:name="Log End CEDS API Flow" doc:id="455c37b7-b0eb-4ea2-bacb-4e3bb3800cc0" message="Log End CEDS API Flow"/>
+	</sub-flow>
+</mule>
